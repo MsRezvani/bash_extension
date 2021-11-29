@@ -1,0 +1,68 @@
+#!/bin/bash
+
+##################################################
+## Extract All Argument from Input, and order of Parameter is not matter
+## just 'Command Part' be in the end of the line
+##################################################
+function read_argument {
+  for i in {1..2} ; do
+       case $1 in
+                -i)
+                        shift
+                        interval=$1
+                        shift
+                        ;;
+                -n)
+                        shift
+                        number=$1
+                        shift
+                        ;;
+                *)
+                        echo "format Uncorrected"
+                         echo "command format like try -i Interval -n Iteration COMMAND args"
+                        exit 1
+                        ;;
+       esac
+  done
+command=$*
+}
+
+##################################################
+## execute any command with any number of parameter
+##################################################
+function exe_command {
+  #Command like: flask app test ......
+  $* 2> /dev/null
+  if [[ $? -eq 0 ]]; then
+    exit 0
+  fi
+}
+
+#################################################
+## Try to Execute Command With Number of Iteration that specify in the Input's Argument with "-n NUM"
+#################################################
+function try_to_execute_command {
+  #Command like: flask app test ......
+  for i in $(seq 1 $number) ; do
+     echo "command not found. try to execute it after : ${interval} sec."
+     sleep $interval
+     exe_command $*
+  done
+
+}
+
+################################################
+## Main Entry Point to Execute
+################################################
+function main {
+  read_argument $*
+  exe_command ${command[*]}
+  ## if ( command properly executed)  THEN exit with 0 ELSE try to Execute it with -n Number.
+  try_to_execute_command ${command[*]}
+  ## if (Command not Property executed yet) THEN exit 1
+  echo "can not executed Command Part!" >&2
+  exit 1
+}
+
+main $*
+echo $?
